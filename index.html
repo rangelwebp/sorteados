@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Sorteio de Eliminação</title>
+		<link rel="preconnect" href="https://rsms.me/inter/inter.css" />
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+
+			body {
+				font-family: "Inter", -apple-system, BlinkMacSystemFont,
+					sans-serif;
+				background: white;
+				color: #333;
+				padding: 20px;
+				max-width: 600px;
+				margin: 0 auto;
+				line-height: 1.6;
+			}
+
+			textarea {
+				width: 100%;
+				height: 200px;
+				padding: 12px;
+				border: 2px solid #ddd;
+				border-radius: 8px;
+				font-size: 16px;
+				font-family: inherit;
+				resize: vertical;
+				margin-bottom: 16px;
+			}
+
+			textarea:focus {
+				outline: none;
+				border-color: #000;
+			}
+
+			button {
+				background: #000;
+				color: white;
+				border: none;
+				padding: 12px 24px;
+				font-size: 16px;
+				font-family: inherit;
+				border-radius: 8px;
+				cursor: pointer;
+				margin: 4px;
+				transition: background 0.2s;
+			}
+
+			button:hover:not(:disabled) {
+				background: #333;
+			}
+
+			button:disabled {
+				background: #ccc;
+				cursor: not-allowed;
+			}
+
+			#listaContainer {
+				margin: 24px 0;
+				min-height: 60px;
+			}
+
+			#lista {
+				background: #f8f9fa;
+				border: 2px solid #e9ecef;
+				border-radius: 8px;
+				padding: 16px;
+				max-height: 300px;
+				overflow-y: auto;
+				font-size: 18px;
+				line-height: 1.8;
+			}
+
+			.eliminado {
+				color: #dc3545;
+				font-weight: 500;
+				margin: 12px 0;
+				padding: 12px;
+				background: #f8d7da;
+				border-left: 4px solid #dc3545;
+				border-radius: 4px;
+			}
+
+			.vencedor {
+				background: #d4edda !important;
+				border-left-color: #28a745 !important;
+				color: #155724;
+				font-size: 20px;
+				font-weight: 600;
+			}
+
+			.status {
+				font-size: 18px;
+				margin: 16px 0;
+				text-align: center;
+				font-weight: 500;
+			}
+		</style>
+	</head>
+	<body>
+		<h1>Sorteio</h1>
+
+		<p>Digite um nome por linha:</p>
+		<textarea
+			id="nomesInput"
+			placeholder="João
+Maria
+Pedro
+Ana
+Carlos
+..."></textarea>
+
+		<button id="gerarBtn">Gerar Lista</button>
+
+		<div id="listaContainer" style="display: none">
+			<div id="status" class="status"></div>
+			<div id="lista"></div>
+			<div id="eliminados"></div>
+			<button id="sortearBtn" style="display: none">
+				Eliminar Aleatório
+			</button>
+			<button id="reiniciarBtn" style="display: none">Nova Lista</button>
+		</div>
+
+		<script>
+			const nomesInput = document.getElementById("nomesInput");
+			const gerarBtn = document.getElementById("gerarBtn");
+			const listaContainer = document.getElementById("listaContainer");
+			const lista = document.getElementById("lista");
+			const eliminados = document.getElementById("eliminados");
+			const sortearBtn = document.getElementById("sortearBtn");
+			const reiniciarBtn = document.getElementById("reiniciarBtn");
+			const status = document.getElementById("status");
+
+			let listaNomes = [];
+
+			gerarBtn.addEventListener("click", gerarLista);
+			sortearBtn.addEventListener("click", eliminarAleatorio);
+			reiniciarBtn.addEventListener("click", reiniciar);
+
+			function gerarLista() {
+				const texto = nomesInput.value.trim();
+				if (!texto) {
+					alert("Digite pelo menos um nome!");
+					return;
+				}
+
+				listaNomes = texto
+					.split("\n")
+					.map((nome) => nome.trim())
+					.filter((nome) => nome.length > 0);
+
+				if (listaNomes.length < 2) {
+					alert("Digite pelo menos 2 nomes para o sorteio!");
+					return;
+				}
+
+				atualizarLista();
+				listaContainer.style.display = "block";
+				sortearBtn.style.display = "inline-block";
+				nomesInput.style.display = "none";
+				gerarBtn.style.display = "none";
+				status.textContent = `Lista com ${listaNomes.length} participantes`;
+			}
+
+			function atualizarLista() {
+				lista.innerHTML = listaNomes
+					.map((nome) => `<div>${nome}</div>`)
+					.join("");
+			}
+
+			function eliminarAleatorio() {
+				if (listaNomes.length <= 1) {
+					sortearBtn.disabled = true;
+					return;
+				}
+
+				const indiceAleatorio = Math.floor(
+					Math.random() * listaNomes.length
+				);
+				const eliminado = listaNomes.splice(indiceAleatorio, 1)[0];
+
+				// Adiciona eliminado na lista de removidos
+				const divEliminado = document.createElement("div");
+				divEliminado.className = "eliminado";
+				divEliminado.textContent = `❌ ELIMINADO: ${eliminado}`;
+				eliminados.insertBefore(divEliminado, eliminados.firstChild);
+
+				atualizarLista();
+
+				if (listaNomes.length === 1) {
+					// Último é o vencedor
+					const ultimoNome = listaNomes[0];
+					lista.innerHTML = `<div class="vencedor">🏆 VENCEDOR: ${ultimoNome}</div>`;
+					status.textContent = "🏆 Temos um vencedor!";
+					sortearBtn.style.display = "none";
+					reiniciarBtn.style.display = "inline-block";
+				} else {
+					status.textContent = `${listaNomes.length} restantes...`;
+				}
+			}
+
+			function reiniciar() {
+				listaNomes = [];
+				lista.innerHTML = "";
+				eliminados.innerHTML = "";
+				status.textContent = "";
+				sortearBtn.style.display = "none";
+				reiniciarBtn.style.display = "none";
+				listaContainer.style.display = "none";
+				nomesInput.style.display = "block";
+				gerarBtn.style.display = "block";
+				nomesInput.value = "";
+				nomesInput.focus();
+			}
+		</script>
+	</body>
+</html>
